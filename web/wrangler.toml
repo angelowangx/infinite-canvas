@@ -1,0 +1,32 @@
+# infinite-canvas — Cloudflare Workers 配置
+# 放在仓库根目录（与 web/ 同级）
+
+name = "infinite-canvas"
+main = "worker/index.js"
+compatibility_date = "2026-09-04"
+
+# ── 静态资源 ──────────────────────────────────────────────
+# 目录是构建产物，Cloudflare 会先跑 Build command 生成它，再执行 wrangler deploy
+[assets]
+directory = "web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# ⚠️ 这一行是整套配置的关键，删掉会导致 /api 完全不生效
+# 作用：/api/* 的请求先交给 Worker 代码处理，其余路径才走静态资源匹配
+run_worker_first = ["/api/*"]
+
+# ── 环境变量 ──────────────────────────────────────────────
+# 上游 AI 接口地址。换上游只改这一行，重新部署即可
+[vars]
+API_UPSTREAM = "https://new.jiangzishijie.top"
+
+# ── 域名绑定 ──────────────────────────────────────────────
+# pattern 末尾的 /* 不能省。不带它 wrangler 会把它当成静态资源路径前缀，
+# 去 web/dist/canvas.angelo.wang/ 找文件，导致全站 404
+[[routes]]
+pattern = "canvas.angelo.wang/*"
+zone_name = "angelo.wang"
+
+# 第一次想先试跑（不碰线上域名）时，把上面整个 [[routes]] 段注释掉，
+# 部署后会得到一个 *.workers.dev 地址，验证无误再放开。
